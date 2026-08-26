@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Compass, Flame, Sparkles, Activity, ShieldAlert } from "lucide-react";
+import { Compass, Flame } from "lucide-react";
 
 interface DimensionMetrics {
   name: string;

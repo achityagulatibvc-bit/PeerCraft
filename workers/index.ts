@@ -120,7 +120,7 @@ async function handleRegisterBenchmark(request: Request, env: Env): Promise<Resp
  * - Edge: Remaining node or laptop (lightest requirement) -> Velocity + Voice + Compression
  */
 async function handleClusterElection(request: Request, env: Env): Promise<Response> {
-  const { requesterNodeId, force } = await request.json().catch(() => ({ requesterNodeId: '', force: false }));
+  const { force } = await request.json().catch(() => ({ force: false }));
   const now = Date.now();
 
   // Fetch all registered nodes
@@ -171,12 +171,16 @@ async function handleClusterElection(request: Request, env: Env): Promise<Respon
     }
   }
   // Fallback if no node meets 5.5GB threshold
-  if (!primaryCandidate && activeNodes.length > 0) {
+  if (!primaryCandidate) {
     primaryCandidate = activeNodes[0];
   }
 
+  if (!primaryCandidate) {
+    return jsonResponse({ error: 'Failed to elect primary candidate' }, 500);
+  }
+
   // 2. Elect Secondary (Nether/End): next best node with >= 3000 MB RAM
-  const remainingForSecondary = activeNodes.filter(n => n.id !== primaryCandidate?.id);
+  const remainingForSecondary = activeNodes.filter(n => n.id !== primaryCandidate.id);
   for (const node of remainingForSecondary) {
     if (node.availableRamMb >= 2800) {
       secondaryCandidate = node;
@@ -190,7 +194,7 @@ async function handleClusterElection(request: Request, env: Env): Promise<Respon
 
   // 3. Elect Edge (Velocity Proxy + Delta Compressor): remaining node or lowest-resource node
   const remainingForEdge = activeNodes.filter(
-    n => n.id !== primaryCandidate?.id && n.id !== secondaryCandidate?.id
+    n => n.id !== primaryCandidate.id && n.id !== secondaryCandidate?.id
   );
   if (remainingForEdge.length > 0) {
     // Pick the most power-efficient / lightest node for Edge
@@ -380,7 +384,7 @@ async function handleFailover(request: Request, env: Env): Promise<Response> {
  * GET /api/cluster/topology
  * Returns the latest internal addresses and ports for Overworld and Nether/End
  */
-async function handleGetTopology(request: Request, env: Env): Promise<Response> {
+async function handleGetTopology(_request: Request, env: Env): Promise<Response> {
   const rolesRes = await fetch(getFirebaseUrl(env, 'cluster/roles'));
   const roles = await rolesRes.json();
 

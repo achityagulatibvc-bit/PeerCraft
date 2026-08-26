@@ -4,10 +4,10 @@
 
 proxies:
   bungee-cord:
-    online-mode: true
+    online-mode: false
   velocity:
     enabled: true
-    online-mode: true
+    online-mode: false
     secret: "PEERCRAFT_SHARED_VELOCITY_SECRET_KEY_HEX"
 
 timings:

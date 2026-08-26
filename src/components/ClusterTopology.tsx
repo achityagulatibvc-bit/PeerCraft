@@ -1,5 +1,5 @@
 import React from "react";
-import { Server, Cpu, Layers, Radio, ShieldCheck, Activity, Globe, HardDrive } from "lucide-react";
+import { Server, Layers, Radio } from "lucide-react";
 
 export interface ClusterRoleInfo {
   node_id: string;

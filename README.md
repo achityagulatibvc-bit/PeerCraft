@@ -470,8 +470,8 @@ motd = "<gradient:#4facfe:#00f2fe>PeerCraft Asymmetric Dynamic Cluster</gradient
 show-max-players = 20
 player-info-forwarding-mode = "modern"
 forwarding-secret-file = "velocity.secret"
-online-mode = true
-force-key-authentication = true
+online-mode = false
+force-key-authentication = false
 ```
 
 ### 2. PaperMC Velocity Modern Forwarding (`config/paper-global.yml`)
@@ -482,7 +482,7 @@ Applied to both Primary (Overworld) and Secondary (Nether/End) instances:
 proxies:
   velocity:
     enabled: true
-    online-mode: true
+    online-mode: false
     secret: "PEERCRAFT_SHARED_VELOCITY_SECRET_KEY_HEX"
 ```
 

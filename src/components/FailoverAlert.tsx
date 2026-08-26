@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, RefreshCw, CheckCircle, ShieldAlert } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 export interface FailoverEvent {
   active: boolean;
