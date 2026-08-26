@@ -1,0 +1,30 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    "cluster": {
+      "nodes": {
+        "$nodeId": {
+          ".write": "auth != null && (!data.exists() || data.child('nodeId').val() === auth.uid || newData.child('nodeId').val() === auth.uid)"
+        }
+      },
+      "roles": {
+        ".write": "auth != null",
+        "primary": {
+          ".validate": "newData.hasChildren(['node_id', 'lease_expires_at', 'status'])"
+        },
+        "secondary": {
+          ".validate": "newData.hasChildren(['node_id', 'lease_expires_at', 'status'])"
+        },
+        "edge": {
+          ".validate": "newData.hasChildren(['node_id', 'lease_expires_at', 'status'])"
+        }
+      },
+      "manifests": {
+        ".write": "auth != null"
+      },
+      "events": {
+        ".write": "auth != null"
+      }
+    }
+  }
+}

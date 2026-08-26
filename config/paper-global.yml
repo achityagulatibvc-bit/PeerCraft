@@ -1,0 +1,22 @@
+# ==============================================================================
+# PeerCraft Paper Global Configuration Template
+# ==============================================================================
+
+proxies:
+  bungee-cord:
+    online-mode: true
+  velocity:
+    enabled: true
+    online-mode: true
+    secret: "PEERCRAFT_SHARED_VELOCITY_SECRET_KEY_HEX"
+
+timings:
+  enabled: false
+  verbose: false
+
+chunk-loading-advanced:
+  auto-config-send-distance: true
+
+unsupported-settings:
+  allow-piston-duplication: false
+  allow-headless-break: false

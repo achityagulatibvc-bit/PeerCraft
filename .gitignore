@@ -1,0 +1,48 @@
+# ==============================================================================
+# PeerCraft Git Ignore Configuration
+# ==============================================================================
+
+# Node / Web Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.pnp
+.pnp.js
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/Cargo.lock
+
+# Cloudflare Workers & Environment
+.dev.vars
+.wrangler/
+.env
+.env.*
+!.env.example
+
+# Minecraft Runtime & Server Instances
+servers/
+bin/jre21/
+bin/*.jar
+bin/playit
+bin/playit.exe
+*.mca
+*.dat
+*.dat_old
+*.log
+*.gz
+logs/
+crash-reports/
+cache/
+.paper-remapped/
+usercache.json
+eula.txt
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,85 @@
+{
+  "cluster": {
+    "state": "RUNNING",
+    "elected_at": 1718000000000,
+    "nodes": {
+      "node_example_alpha": {
+        "nodeName": "Desktop-Ryzen-5800X",
+        "cpuSingleThreadScore": 2850,
+        "availableRamMb": 16384,
+        "upstreamBandwidthMbps": 50,
+        "pingMs": 12,
+        "compositeScore": 4725.0,
+        "lastSeen": 1718000000000,
+        "status": "ONLINE"
+      },
+      "node_example_beta": {
+        "nodeName": "Laptop-Intel-i5",
+        "cpuSingleThreadScore": 1420,
+        "availableRamMb": 7800,
+        "upstreamBandwidthMbps": 30,
+        "pingMs": 24,
+        "compositeScore": 2330.0,
+        "lastSeen": 1718000000000,
+        "status": "ONLINE"
+      }
+    },
+    "roles": {
+      "primary": {
+        "node_id": "node_example_alpha",
+        "node_name": "Desktop-Ryzen-5800X",
+        "dimension": "overworld",
+        "port": 25565,
+        "lease_expires_at": 1718000015000,
+        "status": "ACTIVE",
+        "tps": 20.0,
+        "connected_players": 4,
+        "last_heartbeat": 1718000000000
+      },
+      "secondary": {
+        "node_id": "node_example_alpha",
+        "node_name": "Desktop-Ryzen-5800X",
+        "dimension": "nether_end",
+        "port": 25566,
+        "lease_expires_at": 1718000015000,
+        "status": "ACTIVE",
+        "tps": 20.0,
+        "connected_players": 1,
+        "last_heartbeat": 1718000000000
+      },
+      "edge": {
+        "node_id": "node_example_beta",
+        "node_name": "Laptop-Intel-i5",
+        "role": "edge",
+        "services": [
+          "velocity_proxy",
+          "simple_voice_chat",
+          "r2_delta_offloader"
+        ],
+        "proxy_port": 25577,
+        "voice_port": 24454,
+        "lease_expires_at": 1718000015000,
+        "status": "ACTIVE",
+        "last_heartbeat": 1718000000000
+      }
+    },
+    "manifests": {
+      "overworld": {
+        "version": 1,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chunk_count": 1024,
+        "uploaded_by": "node_example_alpha",
+        "uploaded_at": 1718000000000,
+        "r2_key": "worlds/overworld/manifest.json"
+      },
+      "nether_end": {
+        "version": 1,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chunk_count": 512,
+        "uploaded_by": "node_example_alpha",
+        "uploaded_at": 1718000000000,
+        "r2_key": "worlds/nether_end/manifest.json"
+      }
+    }
+  }
+}

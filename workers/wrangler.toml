@@ -1,0 +1,17 @@
+name = "peercraft-cluster-broker"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+# Configuration variables populated in Cloudflare dashboard or .dev.vars
+FIREBASE_DB_URL = "https://your-peercraft-project.firebaseio.com"
+R2_S3_API_URL = "https://<account_id>.r2.cloudflarestorage.com"
+SUPABASE_DB_URL = "https://<project-ref>.supabase.co"
+
+# Encrypted Secrets (Set via: wrangler secret put <NAME>)
+# - GROUP_AUTH_SECRET
+# - FIREBASE_DATABASE_SECRET
+# - PLAYIT_SECRET_KEY
+# - R2_ACCESS_KEY_ID
+# - R2_SECRET_ACCESS_KEY
+# - SUPABASE_SERVICE_ROLE_KEY
