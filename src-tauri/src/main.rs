@@ -99,8 +99,8 @@ async fn stop_playit_tunnel(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn get_r2_bucket_status() -> Result<sync::r2_uploader::R2BucketStatus, String> {
-    Ok(sync::r2_uploader::R2Uploader::get_status())
+async fn get_r2_bucket_status() -> Result<sync::r2_uploader::B2StorageStatus, String> {
+    Ok(sync::r2_uploader::B2StorageManager::get_status())
 }
 
 #[tauri::command]

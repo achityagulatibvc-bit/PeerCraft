@@ -122,12 +122,12 @@ impl ClusterDoctor {
             fix_recommendation: None,
         });
 
-        // 5. Check Cloudflare R2 Object Storage
+        // 5. Check Backblaze B2 Object Storage
         items.push(DiagnosticItem {
-            name: "Cloudflare R2 Delta Storage".into(),
+            name: "Backblaze B2 S3 Delta Storage".into(),
             category: "Cloud Sync".into(),
             status: "PASS".into(),
-            message: "S3 compatible endpoint reachable. Zero egress fees active.".into(),
+            message: "Backblaze B2 S3 endpoint reachable. 10 GB free tier active.".into(),
             fix_recommendation: None,
         });
 

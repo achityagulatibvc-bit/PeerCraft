@@ -115,21 +115,21 @@ export const BackupsTab: React.FC = () => {
         )}
       </div>
 
-      {/* Cloudflare R2 Connection Hero Card */}
+      {/* Backblaze B2 Connection Hero Card */}
       <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400 shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
             <Cloud className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-white">Cloudflare R2 Object Storage</h3>
+              <h3 className="text-base font-bold text-white">Backblaze B2 Cloud Storage</h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
-                Connected
+                Connected (S3 API)
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              {storageStatus.storage_used_formatted} • 0 Egress Fees • Differential MCA chunk sync
+              {storageStatus.storage_used_formatted} • S3-Compatible • Differential MCA chunk sync
             </p>
           </div>
         </div>
@@ -137,7 +137,7 @@ export const BackupsTab: React.FC = () => {
         <button
           onClick={handleCreateBackup}
           disabled={creating}
-          className="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+          className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white text-xs font-black transition-all shadow-xl shadow-rose-600/30 flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
         >
           <Plus className="w-4 h-4" />
           {creating ? "Packaging Delta..." : "Create Backup"}
