@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ShieldCheck,
   Sword,
@@ -21,37 +21,67 @@ export const OptionsTab: React.FC = () => {
     whitelist: false,
     cracked: true,
     pvp: true,
-    commandBlocks: true,
+    command_blocks: true,
     fly: false,
     animals: true,
     monsters: true,
     villagers: true,
     nether: true,
-    forceGamemode: false,
-    spawnProtection: 16,
-    resourcePackUrl: "",
-    resourcePackRequired: false,
+    spawn_protection: 16,
+    motd: "PeerCraft Asymmetric Cluster [Cracked OK]",
+    server_port: 25565,
   });
 
+  useEffect(() => {
+    const loadRealOptions = async () => {
+      if ((window as any).__TAURI_IPC__) {
+        try {
+          const { invoke } = await import("@tauri-apps/api/tauri");
+          const realOpts = await invoke<any>("get_server_options", { dimension: "overworld" });
+          if (realOpts) {
+            setOptions(realOpts);
+          }
+        } catch (err) {
+          console.warn("Could not load server.properties from Tauri:", err);
+        }
+      }
+    };
+    loadRealOptions();
+  }, []);
+
+  const saveOptionsToBackend = async (newOpts: typeof options) => {
+    setSaved(true);
+    if ((window as any).__TAURI_IPC__) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        await invoke("set_server_options", { dimension: "overworld", options: newOpts });
+      } catch (err) {
+        console.error("Failed to write server.properties:", err);
+      }
+    }
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   const toggleOption = (key: keyof typeof options) => {
-    setOptions((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-    triggerAutoSave();
+    setOptions((prev) => {
+      const updated = {
+        ...prev,
+        [key]: !prev[key],
+      };
+      saveOptionsToBackend(updated);
+      return updated;
+    });
   };
 
   const updateField = (key: keyof typeof options, value: any) => {
-    setOptions((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-    triggerAutoSave();
-  };
-
-  const triggerAutoSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setOptions((prev) => {
+      const updated = {
+        ...prev,
+        [key]: value,
+      };
+      saveOptionsToBackend(updated);
+      return updated;
+    });
   };
 
   return (
@@ -136,8 +166,8 @@ export const OptionsTab: React.FC = () => {
               type="number"
               min={0}
               max={100}
-              value={options.spawnProtection}
-              onChange={(e) => updateField("spawnProtection", parseInt(e.target.value) || 0)}
+              value={options.spawn_protection}
+              onChange={(e) => updateField("spawn_protection", parseInt(e.target.value) || 0)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-blue-500"
             />
           </div>
@@ -232,14 +262,14 @@ export const OptionsTab: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => toggleOption("commandBlocks")}
+              onClick={() => toggleOption("command_blocks")}
               className={`w-12 h-6 rounded-full transition-colors relative p-0.5 ${
-                options.commandBlocks ? "bg-emerald-500" : "bg-slate-800"
+                options.command_blocks ? "bg-emerald-500" : "bg-slate-800"
               }`}
             >
               <div
                 className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                  options.commandBlocks ? "translate-x-6" : "translate-x-0"
+                  options.command_blocks ? "translate-x-6" : "translate-x-0"
                 }`}
               />
             </button>

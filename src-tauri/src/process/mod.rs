@@ -2,3 +2,7 @@ pub mod supervisor;
 pub mod killer;
 pub mod sleep_inhibitor;
 pub mod sandbox;
+pub mod properties;
+pub mod player_manager;
+pub mod software;
+pub mod worlds;

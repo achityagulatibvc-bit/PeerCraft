@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Upload,
   Download,
@@ -20,32 +20,74 @@ interface WorldDimension {
 }
 
 export const WorldsTab: React.FC = () => {
-  const [dimensions] = useState<WorldDimension[]>([
+  const [dimensions, setDimensions] = useState<WorldDimension[]>([
     {
       id: "world",
       name: "The Overworld",
-      folder: "world/",
-      size: "420 MB",
+      folder: "servers/overworld/world/",
+      size: "Calculating...",
       icon: <Compass className="w-6 h-6 text-blue-400" />,
       nodeAssigned: "Primary Node (Port 25565)",
     },
     {
       id: "world_nether",
       name: "The Nether",
-      folder: "world_nether/",
-      size: "185 MB",
+      folder: "servers/nether_end/world_nether/",
+      size: "Calculating...",
       icon: <Flame className="w-6 h-6 text-purple-400" />,
       nodeAssigned: "Secondary Node (Port 25566)",
     },
     {
       id: "world_the_end",
       name: "The End",
-      folder: "world_the_end/",
-      size: "45 MB",
+      folder: "servers/nether_end/world_the_end/",
+      size: "Calculating...",
       icon: <Moon className="w-6 h-6 text-cyan-400" />,
       nodeAssigned: "Secondary Node (Port 25566)",
     },
   ]);
+
+  useEffect(() => {
+    const loadRealDimensions = async () => {
+      if ((window as any).__TAURI_IPC__) {
+        try {
+          const { invoke } = await import("@tauri-apps/api/tauri");
+          const dims = await invoke<any[]>("get_dimensions_info");
+          if (dims && dims.length > 0) {
+            setDimensions([
+              {
+                id: "world",
+                name: "The Overworld",
+                folder: "servers/overworld/world/",
+                size: dims[0]?.size_formatted || "Baseline",
+                icon: <Compass className="w-6 h-6 text-blue-400" />,
+                nodeAssigned: "Primary Node (Port 25565)",
+              },
+              {
+                id: "world_nether",
+                name: "The Nether",
+                folder: "servers/nether_end/world_nether/",
+                size: dims[1]?.size_formatted || "Baseline",
+                icon: <Flame className="w-6 h-6 text-purple-400" />,
+                nodeAssigned: "Secondary Node (Port 25566)",
+              },
+              {
+                id: "world_the_end",
+                name: "The End",
+                folder: "servers/nether_end/world_the_end/",
+                size: dims[2]?.size_formatted || "Baseline",
+                icon: <Moon className="w-6 h-6 text-cyan-400" />,
+                nodeAssigned: "Secondary Node (Port 25566)",
+              },
+            ]);
+          }
+        } catch (err) {
+          console.warn("Could not inspect real world folders:", err);
+        }
+      }
+    };
+    loadRealDimensions();
+  }, []);
 
   const [toast, setToast] = useState<string | null>(null);
   const [generateModal, setGenerateModal] = useState(false);

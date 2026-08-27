@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Users, Shield, Ban, Globe, Plus, Trash2, Check } from "lucide-react";
 
 interface PlayerItem {
@@ -22,26 +22,56 @@ export const PlayersTab: React.FC = () => {
   const [whitelist, setWhitelist] = useState<PlayerItem[]>([
     { id: "1", name: "ServerAdmin" },
     { id: "2", name: "AlexCraft" },
-    { id: "3", name: "ShadowCrafter_99" },
   ]);
 
-  const [bannedPlayers, setBannedPlayers] = useState<PlayerItem[]>([
-    { id: "1", name: "Griefer_X", reason: "X-Ray and griefing at spawn" },
-  ]);
+  const [bannedPlayers, setBannedPlayers] = useState<PlayerItem[]>([]);
+  const [bannedIps, setBannedIps] = useState<PlayerItem[]>([]);
 
-  const [bannedIps, setBannedIps] = useState<PlayerItem[]>([
-    { id: "1", name: "192.168.1.105", reason: "Spam bot connection" },
-  ]);
+  const loadRealPlayers = async () => {
+    if ((window as any).__TAURI_IPC__) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        const lists = await invoke<any>("get_player_lists");
+        if (lists) {
+          if (lists.ops) setOps(lists.ops.map((o: any) => ({ id: o.uuid || o.name, name: o.name, level: o.level })));
+          if (lists.whitelist) setWhitelist(lists.whitelist.map((w: any) => ({ id: w.uuid || w.name, name: w.name })));
+          if (lists.banned_players) setBannedPlayers(lists.banned_players.map((b: any) => ({ id: b.uuid || b.name, name: b.name, reason: b.reason })));
+          if (lists.banned_ips) setBannedIps(lists.banned_ips.map((b: any) => ({ id: b.ip, name: b.ip, reason: b.reason })));
+        }
+      } catch (err) {
+        console.warn("Could not load real player files:", err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    loadRealPlayers();
+  }, []);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputName.trim()) return;
     const name = inputName.trim();
+
+    if ((window as any).__TAURI_IPC__) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        const listTypeKey = subTab === "banned" ? "banned_players" : subTab;
+        await invoke("modify_player_list", {
+          listType: listTypeKey,
+          action: "add",
+          nameOrIp: name,
+          extraReason: "Added via PeerCraft Dashboard",
+        });
+      } catch (err) {
+        console.error("Modify list error:", err);
+      }
+    }
 
     if (subTab === "ops") {
       setOps((prev) => [...prev, { id: Date.now().toString(), name, level: 4 }]);
@@ -60,7 +90,21 @@ export const PlayersTab: React.FC = () => {
     setInputName("");
   };
 
-  const handleRemove = (id: string, name: string) => {
+  const handleRemove = async (id: string, name: string) => {
+    if ((window as any).__TAURI_IPC__) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        const listTypeKey = subTab === "banned" ? "banned_players" : subTab;
+        await invoke("modify_player_list", {
+          listType: listTypeKey,
+          action: "remove",
+          nameOrIp: name,
+        });
+      } catch (err) {
+        console.error("Remove from list error:", err);
+      }
+    }
+
     if (subTab === "ops") setOps((prev) => prev.filter((p) => p.id !== id));
     else if (subTab === "whitelist") setWhitelist((prev) => prev.filter((p) => p.id !== id));
     else if (subTab === "banned") setBannedPlayers((prev) => prev.filter((p) => p.id !== id));

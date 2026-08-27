@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Check, Download, AlertTriangle, ArrowLeft } from "lucide-react";
 
 interface SoftwareOption {
@@ -12,7 +12,7 @@ interface SoftwareOption {
 }
 
 export const SoftwareTab: React.FC = () => {
-  const softwares: SoftwareOption[] = [
+  const [softwares, setSoftwares] = useState<SoftwareOption[]>([
     {
       id: "paper",
       name: "Paper / Bukkit",
@@ -66,7 +66,28 @@ export const SoftwareTab: React.FC = () => {
       color: "teal",
       versions: ["3.3.0-SNAPSHOT (Cluster Default)"],
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    const loadPaperVersions = async () => {
+      if ((window as any).__TAURI_IPC__) {
+        try {
+          const { invoke } = await import("@tauri-apps/api/tauri");
+          const realVersions = await invoke<string[]>("fetch_software_versions");
+          if (realVersions && realVersions.length > 0) {
+            setSoftwares((prev) =>
+              prev.map((sw) =>
+                sw.id === "paper" ? { ...sw, versions: realVersions.slice(0, 10) } : sw
+              )
+            );
+          }
+        } catch (err) {
+          console.warn("Could not fetch dynamic Paper versions:", err);
+        }
+      }
+    };
+    loadPaperVersions();
+  }, []);
 
   const [selectedSoftware, setSelectedSoftware] = useState<SoftwareOption | null>(null);
   const [installedSoftware, setInstalledSoftware] = useState("paper");

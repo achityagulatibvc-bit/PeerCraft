@@ -13,6 +13,10 @@ use serde::{Deserialize, Serialize};
 use cluster::benchmark::{BenchmarkMetrics, run_quick_benchmark};
 use process::supervisor::ProcessSupervisor;
 use process::sandbox::{SandboxManager, SandboxFileInfo};
+use process::properties::{PropertiesManager, ServerOptions};
+use process::player_manager::{PlayerFileManager, PlayerListsPayload};
+use process::software::SoftwareDiscovery;
+use process::worlds::{WorldsInspector, DimensionDiskInfo};
 use process::killer::PortCollisionGuard;
 
 pub struct AppState {
@@ -117,6 +121,41 @@ async fn write_sandbox_file(dimension: String, file_path: String, content: Strin
 }
 
 #[tauri::command]
+async fn get_server_options(dimension: String) -> Result<ServerOptions, String> {
+    PropertiesManager::read_options(&dimension)
+}
+
+#[tauri::command]
+async fn set_server_options(dimension: String, options: ServerOptions) -> Result<(), String> {
+    PropertiesManager::write_options(&dimension, &options)
+}
+
+#[tauri::command]
+async fn get_player_lists() -> Result<PlayerListsPayload, String> {
+    PlayerFileManager::read_player_lists()
+}
+
+#[tauri::command]
+async fn modify_player_list(
+    list_type: String,
+    action: String,
+    name_or_ip: String,
+    extra_reason: Option<String>,
+) -> Result<(), String> {
+    PlayerFileManager::modify_list(&list_type, &action, &name_or_ip, extra_reason)
+}
+
+#[tauri::command]
+async fn fetch_software_versions() -> Result<Vec<String>, String> {
+    SoftwareDiscovery::fetch_paper_versions().await
+}
+
+#[tauri::command]
+async fn get_dimensions_info() -> Result<Vec<DimensionDiskInfo>, String> {
+    Ok(WorldsInspector::get_dimensions_info())
+}
+
+#[tauri::command]
 async fn cleanup_ports() -> Result<(), String> {
     PortCollisionGuard::cleanup_orphans();
     Ok(())
@@ -139,11 +178,14 @@ fn main() {
             list_sandbox_files,
             read_sandbox_file,
             write_sandbox_file,
+            get_server_options,
+            set_server_options,
+            get_player_lists,
+            modify_player_list,
+            fetch_software_versions,
+            get_dimensions_info,
             cleanup_ports
         ])
-        .on_page_load(move |_, _| {
-            log::info!("PeerCraft UI page loaded");
-        })
         .run(tauri::generate_context!())
         .expect("error while running PeerCraft tauri application");
 
