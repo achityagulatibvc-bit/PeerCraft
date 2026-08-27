@@ -14,7 +14,9 @@ import {
   ArrowRight,
   Flame,
   Compass,
+  Stethoscope,
 } from "lucide-react";
+import { ClusterDoctorModal } from "../modals/ClusterDoctorModal";
 
 interface ServerTabProps {
   clusterRunning: boolean;
@@ -103,8 +105,11 @@ export const ServerTab: React.FC<ServerTabProps> = ({
     }
   };
 
+  const [doctorOpen, setDoctorOpen] = useState(false);
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn select-none">
+      <ClusterDoctorModal isOpen={doctorOpen} onClose={() => setDoctorOpen(false)} />
       {/* 1. Main Aternos-style Server Status Hero Banner */}
       <div className="rounded-3xl bg-slate-900 border border-slate-800 p-7 shadow-2xl relative overflow-hidden">
         {/* Ambient subtle glow based on status */}
@@ -221,8 +226,17 @@ export const ServerTab: React.FC<ServerTabProps> = ({
             </div>
           </div>
 
-          {/* Big Action Buttons (Start / Stop / Restart) */}
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Big Action Buttons (Start / Stop / Restart / Doctor) */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => setDoctorOpen(true)}
+              className="p-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700 flex items-center gap-1.5 shadow-md text-xs font-bold"
+              title="Cluster Doctor Multi-Point Diagnostics"
+            >
+              <Stethoscope className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Doctor</span>
+            </button>
+
             {clusterRunning ? (
               <>
                 <button

@@ -83,6 +83,22 @@ async fn create_differential_backup(name: String) -> Result<sync::delta_compress
 }
 
 #[tauri::command]
+async fn run_cluster_doctor() -> Result<cluster::doctor::ClusterDoctorReport, String> {
+    Ok(cluster::doctor::ClusterDoctor::run_diagnostics())
+}
+
+#[tauri::command]
+async fn trigger_node_failover(failed_node_id: String, failed_role: String, fallback_node_id: String) -> Result<cluster::failover::FailoverEvent, String> {
+    Ok(cluster::failover::FailoverCoordinator::trigger_takeover(&failed_node_id, &failed_role, &fallback_node_id))
+}
+
+#[tauri::command]
+async fn stop_playit_tunnel(state: State<'_, AppState>) -> Result<(), String> {
+    state.tunnel.stop_tunnel();
+    Ok(())
+}
+
+#[tauri::command]
 async fn get_r2_bucket_status() -> Result<sync::r2_uploader::R2BucketStatus, String> {
     Ok(sync::r2_uploader::R2Uploader::get_status())
 }
@@ -274,6 +290,8 @@ fn main() {
             deploy_husksync_config,
             create_differential_backup,
             get_r2_bucket_status,
+            run_cluster_doctor,
+            trigger_node_failover,
             start_playit_tunnel,
             stop_playit_tunnel,
             start_assigned_node,
