@@ -16,13 +16,20 @@ pub struct SupabaseDbConfig {
 impl Default for SupabaseDbConfig {
     fn default() -> Self {
         Self {
-            host: std::env::var("PEERCRAFT_SUPABASE_HOST")
+            host: std::env::var("SUPABASE_DB_HOST")
+                .or_else(|_| std::env::var("PEERCRAFT_SUPABASE_HOST"))
                 .unwrap_or_else(|_| "aws-0-ap-south-1.pooler.supabase.com".into()),
-            port: 5432,
-            database: "postgres".into(),
-            username: std::env::var("PEERCRAFT_SUPABASE_USER")
+            port: std::env::var("SUPABASE_DB_PORT")
+                .ok()
+                .and_then(|p| p.parse().ok())
+                .unwrap_or(5432),
+            database: std::env::var("SUPABASE_DB_NAME")
+                .unwrap_or_else(|_| "postgres".into()),
+            username: std::env::var("SUPABASE_DB_USER")
+                .or_else(|_| std::env::var("PEERCRAFT_SUPABASE_USER"))
                 .unwrap_or_else(|_| "postgres.peercraft_cluster".into()),
-            password: std::env::var("PEERCRAFT_SUPABASE_PASS")
+            password: std::env::var("SUPABASE_DB_PASSWORD")
+                .or_else(|_| std::env::var("PEERCRAFT_SUPABASE_PASS"))
                 .unwrap_or_else(|_| "PEERCRAFT_CLUSTER_POSTGRES_KEY".into()),
             ssl: true,
         }
