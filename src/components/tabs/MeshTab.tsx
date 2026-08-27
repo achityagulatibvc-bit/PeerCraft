@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Radio, Compass, Flame, RefreshCw } from "lucide-react";
+import { Radio, Compass, Flame, RefreshCw, Key } from "lucide-react";
+import { JoinClusterModal } from "../modals/JoinClusterModal";
 
 interface NodeTelemetry {
   node_id?: string;
@@ -34,6 +35,9 @@ export const MeshTab: React.FC = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  const clusterSecret = "PEERCRAFT_DEV_SHARED_SECRET_2026";
 
   const loadTopology = async () => {
     if ((window as any).__TAURI_IPC__) {
@@ -62,6 +66,12 @@ export const MeshTab: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fadeIn select-none">
+      <JoinClusterModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        clusterSecret={clusterSecret}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -71,13 +81,22 @@ export const MeshTab: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={loadTopology}
-          className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          Refresh Topology
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setInviteModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-blue-600/30"
+          >
+            <Key className="w-3.5 h-3.5" />
+            Invite Co-Host
+          </button>
+          <button
+            onClick={loadTopology}
+            className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh Topology
+          </button>
+        </div>
       </div>
 
       {/* 3 Big Node Cards */}
