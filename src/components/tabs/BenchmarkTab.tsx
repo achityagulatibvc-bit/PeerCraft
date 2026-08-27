@@ -1,20 +1,39 @@
 import React, { useState } from "react";
+import { invoke } from "@tauri-apps/api/tauri";
 import { Cpu, Activity, Wifi, RefreshCw, CheckCircle2, Award } from "lucide-react";
+
+interface BenchmarkMetrics {
+  node_id: string;
+  node_name: string;
+  cpu_single_thread_score: number;
+  available_ram_mb: number;
+  upstream_bandwidth_mbps: number;
+  ping_ms: number;
+  composite_score: number;
+}
 
 export const BenchmarkTab: React.FC = () => {
   const [testing, setTesting] = useState(false);
-  const [score, setScore] = useState(4820);
-  const cpuPower = "2,940 pts (Single-Thread)";
-  const ram = "16 GB Available";
-  const ping = "14 ms";
+  const [metrics, setMetrics] = useState<BenchmarkMetrics | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleTest = () => {
+  const handleTest = async () => {
     setTesting(true);
-    setTimeout(() => {
-      setScore(4700 + Math.floor(Math.random() * 250));
+    setError(null);
+    try {
+      const result = await invoke<BenchmarkMetrics>("run_benchmark");
+      setMetrics(result);
+    } catch (e) {
+      setError(String(e));
+    } finally {
       setTesting(false);
-    }, 1500);
+    }
   };
+
+  const score = metrics ? Math.round(metrics.composite_score) : null;
+  const cpuPower = metrics ? `${metrics.cpu_single_thread_score} pts (Single-Thread)` : "—";
+  const ram = metrics ? `${(metrics.available_ram_mb / 1024).toFixed(1)} GB Available` : "—";
+  const ping = metrics ? `${metrics.ping_ms} ms` : "—";
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn">
