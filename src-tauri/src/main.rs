@@ -20,6 +20,8 @@ use process::player_manager::{PlayerFileManager, PlayerListsPayload};
 use process::software::SoftwareDiscovery;
 use process::worlds::{WorldsInspector, DimensionDiskInfo};
 use process::killer::PortCollisionGuard;
+use sync::husksync::{HuskSyncConfigManager, SupabaseDbConfig};
+use sync::sync_poller::{SyncPoller, ClusterSyncTelemetry};
 
 pub struct AppState {
     pub supervisor: Arc<ProcessSupervisor>,
@@ -60,6 +62,17 @@ async fn get_cluster_topology(state: State<'_, AppState>) -> Result<ClusterTopol
 }
 
 #[tauri::command]
+async fn get_sync_status() -> Result<ClusterSyncTelemetry, String> {
+    Ok(SyncPoller::get_sync_telemetry())
+}
+
+#[tauri::command]
+async fn deploy_husksync_config(dimension: String, server_name: String) -> Result<(), String> {
+    let db_config = SupabaseDbConfig::default();
+    HuskSyncConfigManager::deploy_config(&dimension, &server_name, &db_config)
+}
+
+#[tauri::command]
 async fn start_playit_tunnel(secret_key: String, state: State<'_, AppState>) -> Result<u32, String> {
     state.tunnel.start_tunnel(&secret_key)
 }
@@ -74,6 +87,9 @@ async fn stop_playit_tunnel(state: State<'_, AppState>) -> Result<(), String> {
 async fn start_assigned_node(dimension: String, state: State<'_, AppState>) -> Result<String, String> {
     log::info!("Preparing sandbox and starting node for dimension: {}", dimension);
     let server_dir = SandboxManager::initialize_sandbox(&dimension)?;
+
+    // Deploy HuskSync config before startup
+    let _ = HuskSyncConfigManager::deploy_config(&dimension, &dimension, &SupabaseDbConfig::default());
 
     let is_windows = cfg!(target_os = "windows");
     let java_bin = if is_windows { "java.exe" } else { "java" };
@@ -200,6 +216,8 @@ fn main() {
             run_benchmark,
             get_cluster_status,
             get_cluster_topology,
+            get_sync_status,
+            deploy_husksync_config,
             start_playit_tunnel,
             stop_playit_tunnel,
             start_assigned_node,

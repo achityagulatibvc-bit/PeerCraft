@@ -100,10 +100,14 @@ export const ServerTab: React.FC<ServerTabProps> = ({
               <p className="text-xs text-slate-400 font-medium">
                 PeerCraft Asymmetric Dynamic Cluster • Vanilla/Paper 1.20.4
               </p>
-              <div className="flex items-center gap-2 pt-1">
-                <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/25 flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/25 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Cracked Allowed (TLauncher / SKLauncher)
+                </span>
+                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/25 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  HuskSync Supabase PostgreSQL Active (38ms)
                 </span>
               </div>
             </div>
