@@ -11,7 +11,9 @@ use tauri::State;
 use serde::{Deserialize, Serialize};
 
 use cluster::benchmark::{BenchmarkMetrics, run_quick_benchmark};
+use cluster::worker_client::{WorkerClusterClient, ClusterTopologyResponse};
 use process::supervisor::ProcessSupervisor;
+use process::playit::PlayitTunnelSupervisor;
 use process::sandbox::{SandboxManager, SandboxFileInfo};
 use process::properties::{PropertiesManager, ServerOptions};
 use process::player_manager::{PlayerFileManager, PlayerListsPayload};
@@ -21,6 +23,8 @@ use process::killer::PortCollisionGuard;
 
 pub struct AppState {
     pub supervisor: Arc<ProcessSupervisor>,
+    pub tunnel: Arc<PlayitTunnelSupervisor>,
+    pub worker: Arc<WorkerClusterClient>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,6 +52,22 @@ async fn get_cluster_status() -> Result<ClusterStatus, String> {
         nether_tps: 20.0,
         total_players: 4,
     })
+}
+
+#[tauri::command]
+async fn get_cluster_topology(state: State<'_, AppState>) -> Result<ClusterTopologyResponse, String> {
+    state.worker.fetch_topology().await
+}
+
+#[tauri::command]
+async fn start_playit_tunnel(secret_key: String, state: State<'_, AppState>) -> Result<u32, String> {
+    state.tunnel.start_tunnel(&secret_key)
+}
+
+#[tauri::command]
+async fn stop_playit_tunnel(state: State<'_, AppState>) -> Result<(), String> {
+    state.tunnel.stop_tunnel();
+    Ok(())
 }
 
 #[tauri::command]
@@ -165,13 +185,23 @@ fn main() {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
 
     let supervisor = Arc::new(ProcessSupervisor::new());
+    let tunnel = Arc::new(PlayitTunnelSupervisor::new());
+    let worker = Arc::new(WorkerClusterClient::new(
+        std::env::var("PEERCRAFT_API_URL").unwrap_or_else(|_| "https://peercraft-broker.workers.dev".into()),
+        std::env::var("GROUP_AUTH_SECRET").unwrap_or_else(|_| "PEERCRAFT_SECRET".into()),
+    ));
+
     let supervisor_clone = supervisor.clone();
+    let tunnel_clone = tunnel.clone();
 
     tauri::Builder::default()
-        .manage(AppState { supervisor })
+        .manage(AppState { supervisor, tunnel, worker })
         .invoke_handler(tauri::generate_handler![
             run_benchmark,
             get_cluster_status,
+            get_cluster_topology,
+            start_playit_tunnel,
+            stop_playit_tunnel,
             start_assigned_node,
             stop_assigned_node,
             send_server_command,
@@ -191,4 +221,5 @@ fn main() {
 
     // Clean up on exit
     supervisor_clone.terminate_all();
+    tunnel_clone.stop_tunnel();
 }

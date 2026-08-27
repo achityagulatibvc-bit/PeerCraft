@@ -6,3 +6,4 @@ pub mod properties;
 pub mod player_manager;
 pub mod software;
 pub mod worlds;
+pub mod playit;
