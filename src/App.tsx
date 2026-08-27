@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/tauri";
 import {
   Server,
   Gamepad2,
@@ -31,8 +32,28 @@ export function App() {
   const [activeTab, setActiveTab] = useState<string>("play");
   const [isAdmin, setIsAdmin] = useState(true);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
-  const [clusterRunning, setClusterRunning] = useState(true);
+  const [clusterRunning, setClusterRunning] = useState(false);
+  const [clusterBusy, setClusterBusy] = useState(false);
+  const [clusterError, setClusterError] = useState<string | null>(null);
   const [copiedIp, setCopiedIp] = useState(false);
+
+  const handleToggleCluster = async () => {
+    setClusterBusy(true);
+    setClusterError(null);
+    try {
+      if (clusterRunning) {
+        await invoke<string>("stop_assigned_node");
+        setClusterRunning(false);
+      } else {
+        await invoke<string>("start_assigned_node", { role: "PRIMARY" });
+        setClusterRunning(true);
+      }
+    } catch (e) {
+      setClusterError(String(e));
+    } finally {
+      setClusterBusy(false);
+    }
+  };
 
   const serverIp = "mc.peercraft.live";
 
@@ -201,16 +222,20 @@ export function App() {
 
             {/* Quick Status Toggle */}
             <button
-              onClick={() => setClusterRunning(!clusterRunning)}
-              className={`px-4 py-1.5 rounded-2xl text-xs font-bold transition-all shadow-md flex items-center gap-2 ${
+              onClick={handleToggleCluster}
+              disabled={clusterBusy}
+              className={`px-4 py-1.5 rounded-2xl text-xs font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-50 ${
                 clusterRunning
                   ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30"
                   : "bg-rose-600 hover:bg-rose-500 text-white"
               }`}
             >
               <span className={`w-2 h-2 rounded-full ${clusterRunning ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
-              {clusterRunning ? "Server Running" : "Server Stopped"}
+              {clusterBusy ? "Working..." : clusterRunning ? "Server Running" : "Server Stopped"}
             </button>
+            {clusterError && (
+              <p className="text-xs text-red-400 mt-1 max-w-xs">{clusterError}</p>
+            )}
           </div>
         </header>
 
@@ -219,7 +244,7 @@ export function App() {
           {activeTab === "play" && (
             <PlayTab
               clusterRunning={clusterRunning}
-              onToggleCluster={() => setClusterRunning(!clusterRunning)}
+              onToggleCluster={handleToggleCluster}
               onNavigateTab={(tab) => setActiveTab(tab)}
               isAdmin={isAdmin}
             />

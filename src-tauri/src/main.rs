@@ -8,6 +8,7 @@ pub mod rcon;
 
 use serde::{Deserialize, Serialize};
 use cluster::benchmark::{BenchmarkMetrics, run_quick_benchmark};
+use process::supervisor::ProcessSupervisor;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClusterStatus {
@@ -35,16 +36,33 @@ async fn get_cluster_status() -> Result<ClusterStatus, String> {
         total_players: 4,
     })
 }
-
 #[tauri::command]
-async fn start_assigned_node(role: String) -> Result<String, String> {
+async fn start_assigned_node(
+    role: String,
+    supervisor: tauri::State<'_, ProcessSupervisor>,
+) -> Result<String, String> {
     log::info!("Starting node with role: {}", role);
-    Ok(format!("Node started successfully in {} mode", role))
+
+    // TODO: this spawns a safe, harmless placeholder process (not a real
+    // PaperMC/Velocity server). There is currently no config system for
+    // real java binary path, jar location, or JVM args — once that exists,
+    // replace this block with a real spawn_java_process(java_bin, jvm_args,
+    // working_dir) call using those real values.
+    #[cfg(target_os = "windows")]
+    let (placeholder_bin, placeholder_args): (&str, Vec<&str>) =
+        ("ping", vec!["-n", "3600", "127.0.0.1"]);
+    #[cfg(not(target_os = "windows"))]
+    let (placeholder_bin, placeholder_args): (&str, Vec<&str>) = ("sleep", vec!["3600"]);
+
+    supervisor.spawn_java_process(placeholder_bin, &placeholder_args, ".")?;
+
+    Ok(format!("Node started successfully in {} mode (placeholder process)", role))
 }
 
 #[tauri::command]
-async fn stop_assigned_node() -> Result<String, String> {
+async fn stop_assigned_node(supervisor: tauri::State<'_, ProcessSupervisor>) -> Result<String, String> {
     log::info!("Stopping node and executing chunk flush...");
+    supervisor.terminate_all();
     Ok("Node stopped and chunks flushed".into())
 }
 
@@ -52,6 +70,7 @@ fn main() {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
 
     tauri::Builder::default()
+        .manage(ProcessSupervisor::new())
         .invoke_handler(tauri::generate_handler![
             run_benchmark,
             get_cluster_status,
