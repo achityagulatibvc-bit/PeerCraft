@@ -135,7 +135,7 @@ export function App() {
                 {clusterRunning ? "Server Online" : "Server Offline"}
               </span>
             </div>
-            <span className="text-[10px] font-mono text-slate-400">v1.20.4</span>
+            <span className="text-[10px] font-mono text-slate-400">v1.21.4</span>
           </div>
         </div>
       </aside>

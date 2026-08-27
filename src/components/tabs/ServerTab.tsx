@@ -312,7 +312,7 @@ export const ServerTab: React.FC<ServerTabProps> = ({
             </div>
             <div>
               <div className="text-base font-black text-white">Paper / Bukkit</div>
-              <div className="text-xs text-slate-400 font-mono">1.20.4 (Build #498)</div>
+              <div className="text-xs text-slate-400 font-mono">1.21.4 (Latest)</div>
             </div>
           </div>
         </div>

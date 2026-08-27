@@ -20,7 +20,7 @@ export const SoftwareTab: React.FC = () => {
       description: "High performance Minecraft server software with plugin support. Recommended for PeerCraft cluster.",
       badge: "RECOMMENDED",
       color: "blue",
-      versions: ["1.20.4 (Latest)", "1.20.2", "1.20.1", "1.19.4", "1.18.2", "1.16.5"],
+      versions: ["1.21.4 (Latest)", "1.21.1", "1.21.0", "1.20.4", "1.20.2", "1.19.4", "1.18.2"],
     },
     {
       id: "purpur",
@@ -29,7 +29,7 @@ export const SoftwareTab: React.FC = () => {
       description: "Drop-in Paper replacement designed for configurability and high gameplay optimization.",
       badge: "OPTIMIZED",
       color: "purple",
-      versions: ["1.20.4", "1.20.2", "1.20.1", "1.19.4"],
+      versions: ["1.21.4 (Latest)", "1.21.1", "1.21.0", "1.20.4", "1.20.2"],
     },
     {
       id: "vanilla",
@@ -37,7 +37,7 @@ export const SoftwareTab: React.FC = () => {
       category: "vanilla",
       description: "Official Mojang Minecraft server. Standard survival gameplay without plugins or mods.",
       color: "emerald",
-      versions: ["1.20.4", "1.20.2", "1.20.1", "1.19.4", "1.18.2"],
+      versions: ["1.21.4", "1.21.1", "1.21.0", "1.20.4", "1.20.2"],
     },
     {
       id: "fabric",
@@ -46,7 +46,7 @@ export const SoftwareTab: React.FC = () => {
       description: "Lightweight, modular modding toolchain for modern Minecraft versions.",
       badge: "MODS",
       color: "cyan",
-      versions: ["1.20.4", "1.20.2", "1.20.1", "1.19.4"],
+      versions: ["1.21.4", "1.21.1", "1.21.0", "1.20.4", "1.20.2"],
     },
     {
       id: "forge",
@@ -64,7 +64,7 @@ export const SoftwareTab: React.FC = () => {
       description: "Next-generation proxy software that connects the Overworld and Nether/End peer nodes.",
       badge: "CLUSTER GATEWAY",
       color: "teal",
-      versions: ["3.3.0-SNAPSHOT (Cluster Default)"],
+      versions: ["3.3.0-SNAPSHOT (1.21.4 Ready)"],
     },
   ]);
 

@@ -49,30 +49,22 @@ async function bootstrap() {
   console.log(' [PeerCraft] Binary Acquisition & Environment Bootstrap ');
   console.log('========================================================');
 
-  // 1. Download Paper / Purpur 1.20.4 Server JAR
+  // 1. Download Paper / Purpur 1.21.4 (Latest) Server JAR
   const paperDest = path.join(BIN_DIR, 'paper.jar');
-  if (!fs.existsSync(paperDest)) {
-    try {
-      console.log('[1/3] Downloading High-Performance Server Engine (Purpur/Paper 1.20.4)...');
-      await downloadFile('https://api.purpurmc.org/v2/purpur/1.20.4/latest/download', paperDest);
-    } catch (err) {
-      console.warn(`[!] Download failed: ${err.message}. If offline, place paper.jar in bin/ manually.`);
-    }
-  } else {
-    console.log('[✓] paper.jar is already present in bin/');
+  try {
+    console.log('[1/3] Downloading Latest Minecraft 1.21.4 Server Engine (Purpur/Paper 1.21.4)...');
+    await downloadFile('https://api.purpurmc.org/v2/purpur/1.21.4/latest/download', paperDest);
+  } catch (err) {
+    console.warn(`[!] Download failed: ${err.message}. If offline, place paper.jar in bin/ manually.`);
   }
 
   // 2. Download Velocity Proxy JAR
   const velDest = path.join(BIN_DIR, 'velocity.jar');
-  if (!fs.existsSync(velDest)) {
-    try {
-      console.log('[2/3] Downloading Velocity Proxy Gateway (3.3.0)...');
-      await downloadFile('https://api.purpurmc.org/v2/purpur/1.20.4/latest/download', velDest);
-    } catch (err) {
-      console.warn(`[!] Velocity download failed: ${err.message}.`);
-    }
-  } else {
-    console.log('[✓] velocity.jar is already present in bin/');
+  try {
+    console.log('[2/3] Downloading Velocity Proxy Gateway (1.21.4 Compatible)...');
+    await downloadFile('https://api.purpurmc.org/v2/purpur/1.21.4/latest/download', velDest);
+  } catch (err) {
+    console.warn(`[!] Velocity download failed: ${err.message}.`);
   }
 
   // 3. Playit Anycast CLI check
