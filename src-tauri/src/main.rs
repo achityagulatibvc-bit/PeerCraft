@@ -78,9 +78,13 @@ async fn start_playit_tunnel(secret_key: String, state: State<'_, AppState>) -> 
 }
 
 #[tauri::command]
-async fn stop_playit_tunnel(state: State<'_, AppState>) -> Result<(), String> {
-    state.tunnel.stop_tunnel();
-    Ok(())
+async fn create_differential_backup(name: String) -> Result<sync::delta_compressor::BackupManifest, String> {
+    sync::delta_compressor::DeltaCompressor::create_snapshot(&name)
+}
+
+#[tauri::command]
+async fn get_r2_bucket_status() -> Result<sync::r2_uploader::R2BucketStatus, String> {
+    Ok(sync::r2_uploader::R2Uploader::get_status())
 }
 
 #[tauri::command]
@@ -268,6 +272,8 @@ fn main() {
             get_cluster_topology,
             get_sync_status,
             deploy_husksync_config,
+            create_differential_backup,
+            get_r2_bucket_status,
             start_playit_tunnel,
             stop_playit_tunnel,
             start_assigned_node,
