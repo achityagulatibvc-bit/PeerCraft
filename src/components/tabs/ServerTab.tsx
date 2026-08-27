@@ -167,6 +167,10 @@ export const ServerTab: React.FC<ServerTabProps> = ({
                 </span>
               </div>
 
+              <p className="text-xs text-slate-400 font-medium">
+                PeerCraft Asymmetric Dynamic Cluster • Vanilla 26.1.2
+              </p>
+
               {/* Editable MOTD Description */}
               {editingMotd ? (
                 <div className="flex items-center gap-2 pt-0.5">
@@ -196,10 +200,10 @@ export const ServerTab: React.FC<ServerTabProps> = ({
               ) : (
                 <p
                   onClick={() => setEditingMotd(true)}
-                  className="text-xs text-slate-400 font-medium hover:text-white cursor-pointer transition-colors flex items-center gap-1 group"
+                  className="text-xs text-emerald-400/90 font-medium hover:text-white cursor-pointer transition-colors flex items-center gap-1 group"
                   title="Click to edit MOTD description"
                 >
-                  <span>{serverMotd}</span>
+                  <span>"{serverMotd}"</span>
                   <span className="text-[10px] text-slate-500 group-hover:text-blue-400 font-normal">✎</span>
                 </p>
               )}
@@ -307,12 +311,12 @@ export const ServerTab: React.FC<ServerTabProps> = ({
             <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" />
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-sm">
-              P
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black text-sm">
+              V
             </div>
             <div>
-              <div className="text-base font-black text-white">Paper / Bukkit</div>
-              <div className="text-xs text-slate-400 font-mono">1.21.4 (Latest)</div>
+              <div className="text-base font-black text-white">Vanilla</div>
+              <div className="text-xs text-emerald-400 font-mono font-bold">26.1.2 (Active)</div>
             </div>
           </div>
         </div>

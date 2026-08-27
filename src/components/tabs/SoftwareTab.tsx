@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Check, Download, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Check, Download, AlertTriangle, ArrowLeft, Plus, Sparkles } from "lucide-react";
 
 interface SoftwareOption {
   id: string;
@@ -14,13 +14,22 @@ interface SoftwareOption {
 export const SoftwareTab: React.FC = () => {
   const [softwares, setSoftwares] = useState<SoftwareOption[]>([
     {
+      id: "vanilla",
+      name: "Vanilla",
+      category: "vanilla",
+      description: "Official Mojang Minecraft server engine. Standard survival gameplay without plugins or mods.",
+      badge: "ACTIVE",
+      color: "emerald",
+      versions: ["26.1.2 (Active)", "26.2", "1.21.4 (Latest)", "1.21.1", "1.21.0", "1.20.4", "1.20.2"],
+    },
+    {
       id: "paper",
       name: "Paper / Bukkit",
       category: "plugins",
       description: "High performance Minecraft server software with plugin support. Recommended for PeerCraft cluster.",
       badge: "RECOMMENDED",
       color: "blue",
-      versions: ["1.21.4 (Latest)", "1.21.1", "1.21.0", "1.20.4", "1.20.2", "1.19.4", "1.18.2"],
+      versions: ["26.1.2", "1.21.4 (Latest)", "1.21.1", "1.21.0", "1.20.4", "1.20.2", "1.19.4"],
     },
     {
       id: "purpur",
@@ -29,15 +38,7 @@ export const SoftwareTab: React.FC = () => {
       description: "Drop-in Paper replacement designed for configurability and high gameplay optimization.",
       badge: "OPTIMIZED",
       color: "purple",
-      versions: ["1.21.4 (Latest)", "1.21.1", "1.21.0", "1.20.4", "1.20.2"],
-    },
-    {
-      id: "vanilla",
-      name: "Vanilla",
-      category: "vanilla",
-      description: "Official Mojang Minecraft server. Standard survival gameplay without plugins or mods.",
-      color: "emerald",
-      versions: ["1.21.4", "1.21.1", "1.21.0", "1.20.4", "1.20.2"],
+      versions: ["26.1.2", "1.21.4 (Latest)", "1.21.1", "1.21.0", "1.20.4"],
     },
     {
       id: "fabric",
@@ -46,7 +47,7 @@ export const SoftwareTab: React.FC = () => {
       description: "Lightweight, modular modding toolchain for modern Minecraft versions.",
       badge: "MODS",
       color: "cyan",
-      versions: ["1.21.4", "1.21.1", "1.21.0", "1.20.4", "1.20.2"],
+      versions: ["26.1.2", "1.21.4", "1.21.1", "1.21.0", "1.20.4"],
     },
     {
       id: "forge",
@@ -64,7 +65,7 @@ export const SoftwareTab: React.FC = () => {
       description: "Next-generation proxy software that connects the Overworld and Nether/End peer nodes.",
       badge: "CLUSTER GATEWAY",
       color: "teal",
-      versions: ["3.3.0-SNAPSHOT (1.21.4 Ready)"],
+      versions: ["3.3.0-SNAPSHOT (26.1.2 Ready)"],
     },
   ]);
 
@@ -77,7 +78,7 @@ export const SoftwareTab: React.FC = () => {
           if (realVersions && realVersions.length > 0) {
             setSoftwares((prev) =>
               prev.map((sw) =>
-                sw.id === "paper" ? { ...sw, versions: realVersions.slice(0, 10) } : sw
+                sw.id === "paper" ? { ...sw, versions: ["26.1.2", ...realVersions.slice(0, 8)] } : sw
               )
             );
           }
@@ -90,10 +91,11 @@ export const SoftwareTab: React.FC = () => {
   }, []);
 
   const [selectedSoftware, setSelectedSoftware] = useState<SoftwareOption | null>(null);
-  const [installedSoftware, setInstalledSoftware] = useState("paper");
-  const [installedVersion, setInstalledVersion] = useState("1.20.4 (Latest)");
+  const [installedSoftware, setInstalledSoftware] = useState("vanilla");
+  const [installedVersion, setInstalledVersion] = useState("26.1.2");
   const [installing, setInstalling] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
+  const [customVersionInput, setCustomVersionInput] = useState("");
 
   const handleInstall = (version: string) => {
     if (!selectedSoftware) return;
@@ -105,7 +107,17 @@ export const SoftwareTab: React.FC = () => {
       setSelectedSoftware(null);
       setSuccessToast(true);
       setTimeout(() => setSuccessToast(false), 2500);
-    }, 1500);
+    }, 1200);
+  };
+
+  const handleApplyCustomVersion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customVersionInput.trim()) return;
+    setInstalledSoftware("vanilla");
+    setInstalledVersion(customVersionInput.trim());
+    setCustomVersionInput("");
+    setSuccessToast(true);
+    setTimeout(() => setSuccessToast(false), 2500);
   };
 
   return (
@@ -115,15 +127,49 @@ export const SoftwareTab: React.FC = () => {
         <div>
           <h2 className="text-2xl font-black text-white">Software & Versions</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Switch server engine and Minecraft versions with 1-click installation.
+            Switch server engine and Minecraft versions with 1-click installation or custom snapshots.
           </p>
         </div>
 
         {successToast && (
           <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
-            <Check className="w-3.5 h-3.5" /> Reinstalled {installedSoftware.toUpperCase()} {installedVersion}
+            <Check className="w-3.5 h-3.5" /> Installed {installedSoftware.toUpperCase()} {installedVersion}
           </span>
         )}
+      </div>
+
+      {/* Custom Version & Snapshot Quick Input Card */}
+      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Custom Minecraft Release / Snapshot</h3>
+              <p className="text-xs text-slate-400">
+                Currently running: <strong className="text-emerald-400">{installedSoftware.toUpperCase()} {installedVersion}</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleApplyCustomVersion} className="flex gap-3 pt-1">
+          <input
+            type="text"
+            placeholder="Type any custom version or snapshot (e.g. 26.1.2, 26.2, 1.21.4, 24w40a)..."
+            value={customVersionInput}
+            onChange={(e) => setCustomVersionInput(e.target.value)}
+            className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500 font-mono shadow-inner"
+          />
+          <button
+            type="submit"
+            className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Apply Version
+          </button>
+        </form>
       </div>
 
       {/* Software Detail / Version Picker View */}
@@ -162,7 +208,7 @@ export const SoftwareTab: React.FC = () => {
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {selectedSoftware.versions.map((ver) => {
-                  const isCurrent = installedSoftware === selectedSoftware.id && installedVersion === ver;
+                  const isCurrent = installedSoftware === selectedSoftware.id && (installedVersion === ver || ver.startsWith(installedVersion));
                   return (
                     <div
                       key={ver}
@@ -203,7 +249,7 @@ export const SoftwareTab: React.FC = () => {
                 key={sw.id}
                 onClick={() => setSelectedSoftware(sw)}
                 className={`p-6 rounded-3xl bg-slate-900 border transition-all cursor-pointer space-y-4 hover:border-blue-500/50 shadow-xl ${
-                  isInstalled ? "border-blue-500/60 shadow-blue-500/10" : "border-slate-800"
+                  isInstalled ? "border-emerald-500/60 shadow-emerald-500/10" : "border-slate-800"
                 }`}
               >
                 <div className="flex items-center justify-between">

@@ -121,8 +121,8 @@ export const OptionsTab: React.FC = () => {
               <div className="space-y-1">
                 <div className="text-sm font-bold text-white flex items-center gap-2">
                   <span>peercraft.server</span>
-                  <span className="text-[10px] font-sans font-black bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
-                    1.20.4
+                  <span className="text-[10px] font-sans font-black bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">
+                    Vanilla 26.1.2
                   </span>
                 </div>
                 <div className="text-xs text-emerald-400">{options.motd}</div>
