@@ -167,6 +167,56 @@ async fn set_server_options(dimension: String, options: ServerOptions) -> Result
 }
 
 #[tauri::command]
+async fn upload_server_icon(dimension: String, base64_data: String) -> Result<(), String> {
+    let clean_base64 = if let Some((_, b64)) = base64_data.split_once(',') {
+        b64
+    } else {
+        &base64_data
+    };
+
+    let decoded = base64_decode_simple(clean_base64.trim())
+        .ok_or_else(|| "Invalid base64 payload".to_string())?;
+
+    let server_dir = SandboxManager::get_server_dir(&dimension);
+    let target = server_dir.join("server-icon.png");
+    std::fs::write(&target, decoded)
+        .map_err(|e| format!("Failed to write server-icon.png: {}", e))?;
+
+    log::info!("Saved custom server-icon.png for {}", dimension);
+    Ok(())
+}
+
+fn base64_decode_simple(input: &str) -> Option<Vec<u8>> {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut map = [0u8; 256];
+    for (i, &b) in TABLE.iter().enumerate() {
+        map[b as usize] = i as u8;
+    }
+
+    let bytes = input.as_bytes();
+    let mut out = Vec::with_capacity((bytes.len() * 3) / 4);
+    let mut buf = 0u32;
+    let mut bits = 0;
+
+    for &b in bytes {
+        if b == b'=' || b.is_ascii_whitespace() {
+            continue;
+        }
+        if !TABLE.contains(&b) {
+            return None;
+        }
+        buf = (buf << 6) | (map[b as usize] as u32);
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((buf >> bits) as u8);
+            buf &= (1 << bits) - 1;
+        }
+    }
+    Some(out)
+}
+
+#[tauri::command]
 async fn get_player_lists() -> Result<PlayerListsPayload, String> {
     PlayerFileManager::read_player_lists()
 }
@@ -228,6 +278,7 @@ fn main() {
             write_sandbox_file,
             get_server_options,
             set_server_options,
+            upload_server_icon,
             get_player_lists,
             modify_player_list,
             fetch_software_versions,

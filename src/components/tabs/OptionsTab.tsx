@@ -105,7 +105,62 @@ export const OptionsTab: React.FC = () => {
       </div>
 
       {/* Main Settings Grid */}
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Server Branding & Multiplayer Server List Live Preview */}
+        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Server Branding & Multiplayer List Preview
+          </span>
+
+          {/* Minecraft Server List Card Preview */}
+          <div className="p-4 rounded-2xl bg-[#111622] border border-slate-800 flex items-center justify-between font-mono text-xs shadow-inner">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700/80 flex items-center justify-center text-emerald-400 shrink-0 overflow-hidden font-bold">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>peercraft.server</span>
+                  <span className="text-[10px] font-sans font-black bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
+                    1.20.4
+                  </span>
+                </div>
+                <div className="text-xs text-emerald-400">{options.motd}</div>
+                <div className="text-[10px] text-slate-500 font-sans">
+                  Cracked Allowed • Husksync Supabase Active
+                </div>
+              </div>
+            </div>
+
+            <div className="text-right space-y-1">
+              <div className="text-xs font-bold text-slate-300">
+                0 / {options.slots}
+              </div>
+              <div className="flex items-center justify-end gap-0.5">
+                <span className="w-1 h-3 rounded-sm bg-emerald-400" />
+                <span className="w-1 h-3.5 rounded-sm bg-emerald-400" />
+                <span className="w-1 h-4 rounded-sm bg-emerald-400" />
+                <span className="w-1 h-4.5 rounded-sm bg-emerald-400" />
+                <span className="w-1 h-5 rounded-sm bg-emerald-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* MOTD Input */}
+          <div className="space-y-1.5 pt-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Server Description (MOTD)
+            </label>
+            <input
+              type="text"
+              value={options.motd}
+              onChange={(e) => updateField("motd", e.target.value)}
+              placeholder="Enter server description shown in Minecraft multiplayer list..."
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+            />
+          </div>
+        </div>
+
         {/* Core Dropdowns & Inputs */}
         <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 shadow-xl">
           {/* Slots */}
