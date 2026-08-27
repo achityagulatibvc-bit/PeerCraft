@@ -6,8 +6,18 @@ pub mod process;
 pub mod sync;
 pub mod rcon;
 
+use std::sync::Arc;
+use tauri::State;
 use serde::{Deserialize, Serialize};
+
 use cluster::benchmark::{BenchmarkMetrics, run_quick_benchmark};
+use process::supervisor::ProcessSupervisor;
+use process::sandbox::{SandboxManager, SandboxFileInfo};
+use process::killer::PortCollisionGuard;
+
+pub struct AppState {
+    pub supervisor: Arc<ProcessSupervisor>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClusterStatus {
@@ -37,27 +47,106 @@ async fn get_cluster_status() -> Result<ClusterStatus, String> {
 }
 
 #[tauri::command]
-async fn start_assigned_node(role: String) -> Result<String, String> {
-    log::info!("Starting node with role: {}", role);
-    Ok(format!("Node started successfully in {} mode", role))
+async fn start_assigned_node(dimension: String, state: State<'_, AppState>) -> Result<String, String> {
+    log::info!("Preparing sandbox and starting node for dimension: {}", dimension);
+    let server_dir = SandboxManager::initialize_sandbox(&dimension)?;
+
+    let is_windows = cfg!(target_os = "windows");
+    let java_bin = if is_windows { "java.exe" } else { "java" };
+
+    let jvm_args: Vec<&str> = match dimension.as_str() {
+        "overworld" => vec![
+            "-Xms4G", "-Xmx6G",
+            "-XX:+UseG1GC",
+            "-XX:+ParallelRefProcEnabled",
+            "-XX:MaxGCPauseMillis=200",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:+DisableExplicitGC",
+            "-XX:+AlwaysPreTouch",
+            "-jar", "../../bin/paper.jar",
+            "--nogui",
+            "--port", "25565"
+        ],
+        "nether_end" => vec![
+            "-Xms2G", "-Xmx3G",
+            "-XX:+UseG1GC",
+            "-XX:MaxGCPauseMillis=150",
+            "-jar", "../../bin/paper.jar",
+            "--nogui",
+            "--port", "25566"
+        ],
+        "velocity" => vec![
+            "-Xms512M", "-Xmx1024M",
+            "-XX:+UseG1GC",
+            "-jar", "../../bin/velocity.jar"
+        ],
+        _ => return Err(format!("Unknown dimension: {}", dimension)),
+    };
+
+    let pid = state.supervisor.spawn_dimension_process(&dimension, java_bin, &jvm_args, &server_dir)?;
+    Ok(format!("Started {} server (PID: {})", dimension, pid))
 }
 
 #[tauri::command]
-async fn stop_assigned_node() -> Result<String, String> {
-    log::info!("Stopping node and executing chunk flush...");
-    Ok("Node stopped and chunks flushed".into())
+async fn stop_assigned_node(dimension: String, state: State<'_, AppState>) -> Result<String, String> {
+    log::info!("Stopping server instance for dimension: {}", dimension);
+    state.supervisor.stop_dimension(&dimension)?;
+    Ok(format!("Stopped {} server instance", dimension))
+}
+
+#[tauri::command]
+async fn send_server_command(dimension: String, command: String, state: State<'_, AppState>) -> Result<String, String> {
+    log::info!("Executing command on [{}]: {}", dimension, command);
+    state.supervisor.send_command(&dimension, &command)?;
+    Ok(format!("Command sent to {}", dimension))
+}
+
+#[tauri::command]
+async fn list_sandbox_files(dimension: String, subpath: String) -> Result<Vec<SandboxFileInfo>, String> {
+    SandboxManager::list_files(&dimension, &subpath)
+}
+
+#[tauri::command]
+async fn read_sandbox_file(dimension: String, file_path: String) -> Result<String, String> {
+    SandboxManager::read_file(&dimension, &file_path)
+}
+
+#[tauri::command]
+async fn write_sandbox_file(dimension: String, file_path: String, content: String) -> Result<(), String> {
+    SandboxManager::write_file(&dimension, &file_path, &content)
+}
+
+#[tauri::command]
+async fn cleanup_ports() -> Result<(), String> {
+    PortCollisionGuard::cleanup_orphans();
+    Ok(())
 }
 
 fn main() {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
 
+    let supervisor = Arc::new(ProcessSupervisor::new());
+    let supervisor_clone = supervisor.clone();
+
     tauri::Builder::default()
+        .manage(AppState { supervisor })
         .invoke_handler(tauri::generate_handler![
             run_benchmark,
             get_cluster_status,
             start_assigned_node,
-            stop_assigned_node
+            stop_assigned_node,
+            send_server_command,
+            list_sandbox_files,
+            read_sandbox_file,
+            write_sandbox_file,
+            cleanup_ports
         ])
+        .on_page_load(move |_, _| {
+            log::info!("PeerCraft UI page loaded");
+        })
         .run(tauri::generate_context!())
         .expect("error while running PeerCraft tauri application");
+
+    // Clean up on exit
+    supervisor_clone.terminate_all();
 }

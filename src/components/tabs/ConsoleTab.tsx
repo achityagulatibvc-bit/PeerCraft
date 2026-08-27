@@ -50,7 +50,7 @@ export const ConsoleTab: React.FC = () => {
     consoleBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
 
-  const handleSendCommand = (e?: React.FormEvent) => {
+  const handleSendCommand = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!commandInput.trim()) return;
 
@@ -64,6 +64,40 @@ export const ConsoleTab: React.FC = () => {
       level: "EXEC",
       text: `> ${cmd}`,
     };
+
+    setLogs((prev) => [...prev, cmdLog]);
+    setCommandHistory((prev) => [...prev, cmd]);
+    setHistoryIndex(-1);
+    setCommandInput("");
+
+    try {
+      if ((window as any).__TAURI_IPC__) {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        const reply = await invoke<string>("send_server_command", { dimension: "overworld", command: cmd });
+        setLogs((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            time: new Date().toLocaleTimeString(),
+            source: "Paper",
+            level: "INFO",
+            text: reply,
+          },
+        ]);
+        return;
+      }
+    } catch (err) {
+      setLogs((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          time: new Date().toLocaleTimeString(),
+          source: "SYSTEM",
+          level: "WARN",
+          text: `Local mock mode: ${String(err)}`,
+        },
+      ]);
+    }
 
     let reply = `Dispatched command: ${cmd}`;
     if (cmd.startsWith("/op ")) reply = `Made ${cmd.replace("/op ", "")} a server operator`;
@@ -80,10 +114,7 @@ export const ConsoleTab: React.FC = () => {
       text: reply,
     };
 
-    setLogs((prev) => [...prev, cmdLog, replyLog]);
-    setCommandHistory((prev) => [...prev, cmd]);
-    setHistoryIndex(-1);
-    setCommandInput("");
+    setLogs((prev) => [...prev, replyLog]);
   };
 
   const quickCommands = [

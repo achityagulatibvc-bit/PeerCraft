@@ -36,6 +36,23 @@ export function App() {
 
   const serverIp = "mc.peercraft.live";
 
+  const handleToggleCluster = async () => {
+    const nextState = !clusterRunning;
+    setClusterRunning(nextState);
+    if ((window as any).__TAURI_IPC__) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        if (nextState) {
+          await invoke("start_assigned_node", { dimension: "overworld" });
+        } else {
+          await invoke("stop_assigned_node", { dimension: "overworld" });
+        }
+      } catch (err) {
+        console.error("Cluster toggle error:", err);
+      }
+    }
+  };
+
   const handleCopyIp = () => {
     navigator.clipboard.writeText(serverIp);
     setCopiedIp(true);
@@ -201,7 +218,7 @@ export function App() {
 
             {/* Quick Status Toggle */}
             <button
-              onClick={() => setClusterRunning(!clusterRunning)}
+              onClick={handleToggleCluster}
               className={`px-4 py-1.5 rounded-2xl text-xs font-bold transition-all shadow-md flex items-center gap-2 ${
                 clusterRunning
                   ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30"
@@ -219,7 +236,7 @@ export function App() {
           {activeTab === "play" && (
             <PlayTab
               clusterRunning={clusterRunning}
-              onToggleCluster={() => setClusterRunning(!clusterRunning)}
+              onToggleCluster={handleToggleCluster}
               onNavigateTab={(tab) => setActiveTab(tab)}
               isAdmin={isAdmin}
             />
