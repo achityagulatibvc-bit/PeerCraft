@@ -3,12 +3,14 @@ use std::sync::{Arc, Mutex};
 
 pub struct ProcessSupervisor {
     children: Arc<Mutex<Vec<Child>>>,
+    active_role: Arc<Mutex<Option<String>>>,
 }
 
 impl ProcessSupervisor {
     pub fn new() -> Self {
         Self {
             children: Arc::new(Mutex::new(Vec::new())),
+            active_role: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -37,5 +39,23 @@ impl ProcessSupervisor {
             let _ = child.kill();
         }
         list.clear();
+        *self.active_role.lock().unwrap() = None;
+    }
+
+    /// Returns true if at least one supervised process is still alive.
+    /// Also prunes any children that already exited on their own (e.g.
+    /// crashed), so a dead process can't be misreported as running.
+    pub fn is_running(&self) -> bool {
+        let mut list = self.children.lock().unwrap();
+        list.retain_mut(|child| matches!(child.try_wait(), Ok(None)));
+        !list.is_empty()
+    }
+
+    pub fn set_active_role(&self, role: Option<String>) {
+        *self.active_role.lock().unwrap() = role;
+    }
+
+    pub fn active_role(&self) -> Option<String> {
+        self.active_role.lock().unwrap().clone()
     }
 }

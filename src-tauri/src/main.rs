@@ -26,16 +26,22 @@ async fn run_benchmark() -> Result<BenchmarkMetrics, String> {
 }
 
 #[tauri::command]
-async fn get_cluster_status() -> Result<ClusterStatus, String> {
+async fn get_cluster_status(supervisor: tauri::State<'_, ProcessSupervisor>) -> Result<ClusterStatus, String> {
+    let running = supervisor.is_running();
     Ok(ClusterStatus {
-        state: "RUNNING".into(),
-        active_role: "PRIMARY".into(),
+        state: if running { "RUNNING".into() } else { "STOPPED".into() },
+        active_role: supervisor.active_role().unwrap_or_else(|| "NONE".into()),
+        // TODO: still placeholder. No real Paper/Velocity server is spawned yet
+        // (see start_assigned_node), and RCON has no real implementation to
+        // query these from a live server, so we report 0 instead of inventing
+        // fake-but-plausible numbers.
         public_domain: "mc.peercraft.live".into(),
-        overworld_tps: 20.0,
-        nether_tps: 20.0,
-        total_players: 4,
+        overworld_tps: 0.0,
+        nether_tps: 0.0,
+        total_players: 0,
     })
 }
+
 #[tauri::command]
 async fn start_assigned_node(
     role: String,
@@ -55,6 +61,7 @@ async fn start_assigned_node(
     let (placeholder_bin, placeholder_args): (&str, Vec<&str>) = ("sleep", vec!["3600"]);
 
     supervisor.spawn_java_process(placeholder_bin, &placeholder_args, ".")?;
+    supervisor.set_active_role(Some(role.clone()));
 
     Ok(format!("Node started successfully in {} mode (placeholder process)", role))
 }
