@@ -13,14 +13,14 @@ impl PlayitTunnelSupervisor {
         }
     }
 
-    /// Spawns the Playit.gg Anycast Tunnel daemon with the ephemeral secret token
+    /// Spawns the Playit.gg Anycast Tunnel daemon
     pub fn start_tunnel(&self, secret_key: &str) -> Result<u32, String> {
         let base_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         let is_windows = cfg!(target_os = "windows");
         let playit_bin = base_dir.join("bin").join(if is_windows { "playit.exe" } else { "playit" });
 
         if !playit_bin.exists() {
-            return Err("Playit binary not found in bin/ directory. Run bootstrap script or install playit.".into());
+            return Err("Playit binary not found in bin/ directory.".into());
         }
 
         let mut lock = self.process.lock().unwrap();
@@ -30,8 +30,12 @@ impl PlayitTunnelSupervisor {
             }
         }
 
-        let child = Command::new(&playit_bin)
-            .args(["--secret", secret_key, "run"])
+        let mut cmd = Command::new(&playit_bin);
+        if !secret_key.trim().is_empty() && secret_key != "playit_dev_session_token" && secret_key != "your_playit_agent_secret_key" {
+            cmd.args(["--secret", secret_key]);
+        }
+
+        let child = cmd
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
