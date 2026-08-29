@@ -25,6 +25,7 @@ Instead of running a monolithic server on a single computer, PeerCraft automatic
 8. [Cloudflare Worker Broker & Token Gateway](#-cloudflare-worker-broker--token-gateway)
 9. [Server Configuration & JVM Tuning Profiles](#-server-configuration--jvm-tuning-profiles)
 10. [Project Directory Layout](#-project-directory-layout)
+11. [Cold-Start Cluster Bootstrap Sequence](#-cold-start-cluster-bootstrap-sequence)
 
 ---
 
