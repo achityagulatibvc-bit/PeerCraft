@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "PeerCraft Distributed Cluster Architecture",
+    "visual_preset": "blueprint",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "ingress-routing",
+        "label": "Ingress & Dimension Routing",
+        "focus": ["players", "tunnel", "edge_proxy", "primary_overworld", "secondary_nether_end"],
+        "note": "Public player traffic reaches Velocity proxy and is sharded across peer nodes."
+      },
+      {
+        "id": "state-sync",
+        "label": "Global State Lockstep Sync",
+        "focus": ["primary_overworld", "secondary_nether_end", "supabase_postgres", "cf_r2"],
+        "note": "Cross-dimension player inventories, advancements, and world delta chunks sync seamlessly."
+      },
+      {
+        "id": "cluster-control",
+        "label": "Dynamic Election & Heartbeats",
+        "focus": ["desktop_client", "cf_workers", "firebase_rtdb", "edge_proxy", "primary_overworld"],
+        "note": "Hardware benchmarks and 15s TTL leases elect optimal node roles and maintain failover."
+      }
+    ]
+  },
+  "components": [
+    { "id": "players", "type": "external", "label": "Minecraft Players", "sublabel": "1–20 Game Clients", "pos": [40, 240], "size": [130, 62] },
+    { "id": "tunnel", "type": "security", "label": "Playit Anycast", "sublabel": "mc.peercraft.live", "pos": [250, 240], "size": [140, 62], "tag": "ingress" },
+    { "id": "desktop_client", "type": "frontend", "label": "PeerCraft Desktop", "sublabel": "Tauri + Rust + React", "brand": "react", "pos": [250, 470], "size": [140, 62], "tag": "client" },
+    { "id": "edge_proxy", "type": "backend", "label": "Velocity Proxy / Edge", "sublabel": "Portal Router & Voice", "pos": [480, 240], "size": [146, 62], "tag": "laptop" },
+    { "id": "primary_overworld", "type": "backend", "label": "PaperMC Overworld", "sublabel": "Port :25565 · 6-8GB", "pos": [720, 140], "size": [146, 62], "tag": "heavy rig" },
+    { "id": "secondary_nether_end", "type": "backend", "label": "PaperMC Nether / End", "sublabel": "Port :25566 · 3-4GB", "pos": [720, 340], "size": [146, 62], "tag": "medium pc" },
+    { "id": "cf_workers", "type": "cloud", "label": "Cloudflare Workers", "sublabel": "Role Election Broker", "brand": "cloudflare", "pos": [480, 470], "size": [146, 62], "tag": "gateway" },
+    { "id": "firebase_rtdb", "type": "database", "label": "Firebase RTDB", "sublabel": "15s Locks & Manifest", "brand": "firebase", "pos": [720, 470], "size": [146, 62], "tag": "cluster state" },
+    { "id": "supabase_postgres", "type": "database", "label": "Supabase Postgres", "sublabel": "HuskSync Player State", "brand": "postgresql", "pos": [960, 140], "size": [146, 62], "tag": "global db" },
+    { "id": "cf_r2", "type": "cloud", "label": "Cloudflare R2", "sublabel": "Zstd Dimension S3", "brand": "cloudflare", "pos": [960, 340], "size": [146, 62], "tag": "world store" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "PeerCraft Dynamic Peer Mesh", "wraps": ["edge_proxy", "primary_overworld", "secondary_nether_end"], "pad": 18 },
+    { "kind": "region", "label": "Serverless Coordination & Persistence", "wraps": ["cf_workers", "firebase_rtdb", "supabase_postgres", "cf_r2"], "pad": 18 }
+  ],
+  "connections": [
+    { "from": "players", "to": "tunnel", "label": "TCP :25577", "variant": "emphasis" },
+    { "from": "tunnel", "to": "edge_proxy", "label": "Anycast Tunnel", "variant": "security" },
+    { "from": "edge_proxy", "to": "primary_overworld", "label": "Overworld TCP", "variant": "emphasis", "route": "orthogonal-h" },
+    { "from": "edge_proxy", "to": "secondary_nether_end", "label": "Nether/End TCP", "variant": "emphasis", "route": "orthogonal-h" },
+    { "from": "primary_overworld", "to": "supabase_postgres", "label": "HuskSync SQL", "variant": "security" },
+    { "from": "secondary_nether_end", "to": "cf_r2", "label": "MCA Backup", "variant": "dashed" },
+    { "from": "supabase_postgres", "to": "cf_r2", "label": "State Snapshots", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelAt": [1033, 270] },
+    { "from": "desktop_client", "to": "cf_workers", "label": "Benchmark Data", "variant": "emphasis" },
+    { "from": "cf_workers", "to": "firebase_rtdb", "label": "Heartbeat Lease", "variant": "security" },
+    { "from": "edge_proxy", "to": "firebase_rtdb", "label": "Status Watch", "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "Asymmetric Dimension Sharding",
+      "items": [
+        "Velocity Proxy dynamically routes players between Overworld and Nether/The End nodes",
+        "Hardware benchmark scores elect heavy PCs for Overworld and lightweight laptops for Edge Proxy",
+        "Players transition across dimensions with seamless IP forwarding"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Lockstep State Synchronization",
+      "items": [
+        "HuskSync synchronizes player inventories, XP, and advancements across PaperMC servers",
+        "Supabase PostgreSQL stores authoritative player data with row-level transaction safety",
+        "Cloudflare R2 provides zero-egress S3 delta storage for zstd-compressed MCA world regions"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "High Availability & Failover",
+      "items": [
+        "15s TTL distributed leases in Firebase Realtime Database prevent split-brain states",
+        "Automated node failover promotes standby peers if a dimension host disconnects",
+        "Playit Anycast tunnel routes public traffic securely without requiring manual port forwarding"
+      ]
+    }
+  ]
+}
