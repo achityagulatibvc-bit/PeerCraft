@@ -1,126 +1,249 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Users, Shield, Ban, Globe, Plus, Trash2, Check } from "lucide-react";
 
-interface Player {
-  uuid: string;
+interface PlayerItem {
+  id: string;
   name: string;
-  isCracked: boolean;
-  isOp: boolean;
-  dimension: string;
-  ping: number;
+  uuid?: string;
+  reason?: string;
+  level?: number;
 }
 
 export const PlayersTab: React.FC = () => {
-  const [players, setPlayers] = useState<Player[]>([
-    {
-      uuid: "00000000-0000-0000-0009-01f81014e304",
-      name: "ServerAdmin",
-      isCracked: false,
-      isOp: true,
-      dimension: "Overworld",
-      ping: 8,
-    },
-    {
-      uuid: "e839121a-49bf-33b0-91bc-318029ab0f9a",
-      name: "ShadowCrafter_99",
-      isCracked: true,
-      isOp: false,
-      dimension: "Overworld",
-      ping: 28,
-    },
-    {
-      uuid: "f1a23456-7890-4abc-def1-234567890abc",
-      name: "Alex_Miner",
-      isCracked: true,
-      isOp: false,
-      dimension: "Nether",
-      ping: 34,
-    },
-    {
-      uuid: "a9988776-5544-3322-1100-aabbccddeeff",
-      name: "EnderSlayer",
-      isCracked: false,
-      isOp: false,
-      dimension: "The End",
-      ping: 42,
-    },
+  const [subTab, setSubTab] = useState<"ops" | "whitelist" | "banned" | "banned_ips">("ops");
+  const [inputName, setInputName] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
+
+  const [ops, setOps] = useState<PlayerItem[]>([
+    { id: "1", name: "ServerAdmin", level: 4, uuid: "00000000-0000-0000-0009-01f81014e304" },
+    { id: "2", name: "AlexCraft", level: 4 },
   ]);
 
-  const toggleOp = (name: string) => {
-    setPlayers((prev) =>
-      prev.map((p) => (p.name === name ? { ...p, isOp: !p.isOp } : p))
-    );
+  const [whitelist, setWhitelist] = useState<PlayerItem[]>([
+    { id: "1", name: "ServerAdmin" },
+    { id: "2", name: "AlexCraft" },
+  ]);
+
+  const [bannedPlayers, setBannedPlayers] = useState<PlayerItem[]>([]);
+  const [bannedIps, setBannedIps] = useState<PlayerItem[]>([]);
+
+  const loadRealPlayers = async () => {
+    if ((window as any).__TAURI_IPC__) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        const lists = await invoke<any>("get_player_lists");
+        if (lists) {
+          if (lists.ops) setOps(lists.ops.map((o: any) => ({ id: o.uuid || o.name, name: o.name, level: o.level })));
+          if (lists.whitelist) setWhitelist(lists.whitelist.map((w: any) => ({ id: w.uuid || w.name, name: w.name })));
+          if (lists.banned_players) setBannedPlayers(lists.banned_players.map((b: any) => ({ id: b.uuid || b.name, name: b.name, reason: b.reason })));
+          if (lists.banned_ips) setBannedIps(lists.banned_ips.map((b: any) => ({ id: b.ip, name: b.ip, reason: b.reason })));
+        }
+      } catch (err) {
+        console.warn("Could not load real player files:", err);
+      }
+    }
   };
 
-  const kickPlayer = (name: string) => {
-    setPlayers((prev) => prev.filter((p) => p.name !== name));
+  useEffect(() => {
+    loadRealPlayers();
+  }, []);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
   };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputName.trim()) return;
+    const name = inputName.trim();
+
+    if ((window as any).__TAURI_IPC__) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        const listTypeKey = subTab === "banned" ? "banned_players" : subTab;
+        await invoke("modify_player_list", {
+          listType: listTypeKey,
+          action: "add",
+          nameOrIp: name,
+          extraReason: "Added via PeerCraft Dashboard",
+        });
+      } catch (err) {
+        console.error("Modify list error:", err);
+      }
+    }
+
+    if (subTab === "ops") {
+      setOps((prev) => [...prev, { id: Date.now().toString(), name, level: 4 }]);
+      showToast(`Added ${name} as server operator`);
+    } else if (subTab === "whitelist") {
+      setWhitelist((prev) => [...prev, { id: Date.now().toString(), name }]);
+      showToast(`Added ${name} to whitelist`);
+    } else if (subTab === "banned") {
+      setBannedPlayers((prev) => [...prev, { id: Date.now().toString(), name, reason: "Banned by Admin" }]);
+      showToast(`Banned player ${name}`);
+    } else if (subTab === "banned_ips") {
+      setBannedIps((prev) => [...prev, { id: Date.now().toString(), name, reason: "Banned by Admin" }]);
+      showToast(`Banned IP ${name}`);
+    }
+
+    setInputName("");
+  };
+
+  const handleRemove = async (id: string, name: string) => {
+    if ((window as any).__TAURI_IPC__) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/tauri");
+        const listTypeKey = subTab === "banned" ? "banned_players" : subTab;
+        await invoke("modify_player_list", {
+          listType: listTypeKey,
+          action: "remove",
+          nameOrIp: name,
+        });
+      } catch (err) {
+        console.error("Remove from list error:", err);
+      }
+    }
+
+    if (subTab === "ops") setOps((prev) => prev.filter((p) => p.id !== id));
+    else if (subTab === "whitelist") setWhitelist((prev) => prev.filter((p) => p.id !== id));
+    else if (subTab === "banned") setBannedPlayers((prev) => prev.filter((p) => p.id !== id));
+    else if (subTab === "banned_ips") setBannedIps((prev) => prev.filter((p) => p.id !== id));
+    showToast(`Removed ${name}`);
+  };
+
+  const currentList =
+    subTab === "ops"
+      ? ops
+      : subTab === "whitelist"
+      ? whitelist
+      : subTab === "banned"
+      ? bannedPlayers
+      : bannedIps;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn select-none">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-black text-white">Player Management</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Manage online players (both TLauncher/cracked and Mojang accounts).
+            Manage server operators, whitelist access, and player / IP bans.
           </p>
         </div>
-        <span className="px-3.5 py-1.5 rounded-2xl bg-slate-900 border border-slate-800 text-xs font-bold text-white">
-          {players.length} Players Online
-        </span>
+
+        {toast && (
+          <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+            <Check className="w-3.5 h-3.5" /> {toast}
+          </span>
+        )}
       </div>
 
-      {/* Players List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {players.map((p) => (
-          <div
-            key={p.uuid}
-            className="p-5 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-between shadow-xl"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white text-base shadow-md">
-                {p.name.charAt(0)}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-white text-base">{p.name}</h3>
-                  {p.isOp && (
-                    <span className="px-2 py-0.5 text-[9px] font-black bg-rose-500/20 text-rose-300 rounded border border-rose-500/30">
-                      OP
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                  <span className="text-cyan-300 font-semibold">{p.dimension}</span>
-                  <span>•</span>
-                  <span className="font-mono text-emerald-400">{p.ping}ms</span>
-                  <span>•</span>
-                  <span className={p.isCracked ? "text-amber-400 font-semibold" : "text-slate-400"}>
-                    {p.isCracked ? "Cracked" : "Mojang"}
-                  </span>
-                </div>
-              </div>
-            </div>
+      {/* 4 Aternos Subtabs */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-900 rounded-2xl border border-slate-800">
+        {[
+          { id: "ops", label: "Operators (Ops)", icon: Shield },
+          { id: "whitelist", label: "Whitelist", icon: Users },
+          { id: "banned", label: "Banned Players", icon: Ban },
+          { id: "banned_ips", label: "Banned IPs", icon: Globe },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = subTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setSubTab(tab.id as any)}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                isActive
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => toggleOp(p.name)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  p.isOp
-                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
-                }`}
-              >
-                {p.isOp ? "De-OP" : "Make OP"}
-              </button>
-              <button
-                onClick={() => kickPlayer(p.name)}
-                className="px-3 py-1.5 rounded-xl bg-rose-900/40 hover:bg-rose-800 text-rose-200 border border-rose-700/50 text-xs font-bold transition-all"
-              >
-                Kick
-              </button>
+      {/* Add Player Input Form */}
+      <form onSubmit={handleAdd} className="flex gap-3">
+        <input
+          type="text"
+          placeholder={
+            subTab === "banned_ips"
+              ? "Enter IP address (e.g. 192.168.1.100)..."
+              : "Enter Minecraft player username..."
+          }
+          value={inputName}
+          onChange={(e) => setInputName(e.target.value)}
+          className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl px-5 py-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500 placeholder:text-slate-600 shadow-inner"
+        />
+        <button
+          type="submit"
+          className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          Add
+        </button>
+      </form>
+
+      {/* Player List Table / Grid */}
+      <div className="rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden shadow-xl">
+        <div className="p-4 border-b border-slate-800 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+          <span>{currentList.length} Entries in {subTab.toUpperCase()}</span>
+        </div>
+
+        <div className="divide-y divide-slate-800/60">
+          {currentList.length === 0 ? (
+            <div className="text-center py-12 text-slate-600 text-xs italic">
+              No entries currently in this list.
             </div>
-          </div>
-        ))}
+          ) : (
+            currentList.map((player) => (
+              <div
+                key={player.id}
+                className="p-4 flex items-center justify-between hover:bg-slate-800/40 transition-colors"
+              >
+                <div className="flex items-center gap-3.5">
+                  {/* Player Head Icon (Using Crafatar API with fallback) */}
+                  <div className="w-9 h-9 rounded-xl bg-slate-800 overflow-hidden border border-slate-700/80 shrink-0 flex items-center justify-center">
+                    {subTab === "banned_ips" ? (
+                      <Globe className="w-4 h-4 text-cyan-400" />
+                    ) : (
+                      <img
+                        src={`https://mc-heads.net/avatar/${player.name}/36`}
+                        alt={player.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as any).src = "https://mc-heads.net/avatar/Steve/36";
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-bold text-white">{player.name}</div>
+                    {player.reason && (
+                      <div className="text-xs text-rose-400/90">{player.reason}</div>
+                    )}
+                    {player.level && (
+                      <div className="text-[10px] text-blue-400 font-bold">OP Level {player.level} (Full Permissions)</div>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleRemove(player.id, player.name)}
+                  className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                  title="Remove"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

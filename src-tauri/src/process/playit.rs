@@ -1,0 +1,54 @@
+use std::process::{Child, Command, Stdio};
+use std::sync::{Arc, Mutex};
+use std::path::PathBuf;
+
+pub struct PlayitTunnelSupervisor {
+    process: Arc<Mutex<Option<Child>>>,
+}
+
+impl PlayitTunnelSupervisor {
+    pub fn new() -> Self {
+        Self {
+            process: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    /// Spawns the Playit.gg Anycast Tunnel daemon with the ephemeral secret token
+    pub fn start_tunnel(&self, secret_key: &str) -> Result<u32, String> {
+        let base_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        let is_windows = cfg!(target_os = "windows");
+        let playit_bin = base_dir.join("bin").join(if is_windows { "playit.exe" } else { "playit" });
+
+        if !playit_bin.exists() {
+            return Err("Playit binary not found in bin/ directory. Run bootstrap script or install playit.".into());
+        }
+
+        let mut lock = self.process.lock().unwrap();
+        if let Some(child) = lock.as_mut() {
+            if let Ok(None) = child.try_wait() {
+                return Ok(child.id());
+            }
+        }
+
+        let child = Command::new(&playit_bin)
+            .args(["--secret", secret_key, "run"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| format!("Failed to start Playit Anycast daemon: {}", e))?;
+
+        let pid = child.id();
+        *lock = Some(child);
+        log::info!("Started Playit Anycast tunnel daemon with PID {}", pid);
+        Ok(pid)
+    }
+
+    /// Stops the Playit Anycast tunnel daemon
+    pub fn stop_tunnel(&self) {
+        let mut lock = self.process.lock().unwrap();
+        if let Some(mut child) = lock.take() {
+            let _ = child.kill();
+            log::info!("Terminated Playit Anycast tunnel daemon");
+        }
+    }
+}

@@ -45,6 +45,12 @@ export const BenchmarkTab: React.FC = () => {
         </p>
       </div>
 
+      {error && (
+        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-sm">
+          <strong>Benchmark Error:</strong> {error}
+        </div>
+      )}
+
       {/* Big Score Hero Card */}
       <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
         <div className="flex items-center gap-6">
