@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/tauri";
 import {
   Server,
   Terminal,
@@ -30,27 +31,30 @@ import { BenchmarkTab } from "./components/tabs/BenchmarkTab";
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>("server");
-  const [clusterRunning, setClusterRunning] = useState(true);
+  const [clusterRunning, setClusterRunning] = useState(false);
+  const [clusterBusy, setClusterBusy] = useState(false);
+  const [clusterError, setClusterError] = useState<string | null>(null);
   const [copiedIp, setCopiedIp] = useState(false);
 
-  const serverIp = "mc.peercraft.live";
-
   const handleToggleCluster = async () => {
-    const nextState = !clusterRunning;
-    setClusterRunning(nextState);
-    if ((window as any).__TAURI_IPC__) {
-      try {
-        const { invoke } = await import("@tauri-apps/api/tauri");
-        if (nextState) {
-          await invoke("start_assigned_node", { dimension: "overworld" });
-        } else {
-          await invoke("stop_assigned_node", { dimension: "overworld" });
-        }
-      } catch (err) {
-        console.error("Cluster toggle error:", err);
+    setClusterBusy(true);
+    setClusterError(null);
+    try {
+      if (clusterRunning) {
+        await invoke<string>("stop_assigned_node", { dimension: "overworld" });
+        setClusterRunning(false);
+      } else {
+        await invoke<string>("start_assigned_node", { dimension: "overworld" });
+        setClusterRunning(true);
       }
+    } catch (e) {
+      setClusterError(String(e));
+    } finally {
+      setClusterBusy(false);
     }
   };
+
+  const serverIp = "mc.peercraft.live";
 
   const handleCopyIp = () => {
     navigator.clipboard.writeText(serverIp);
@@ -173,19 +177,17 @@ export function App() {
             {/* Quick Status Toggle Button */}
             <button
               onClick={handleToggleCluster}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 ${
+              disabled={clusterBusy}
+              className={`px-4 py-1.5 rounded-2xl text-xs font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-50 ${
                 clusterRunning
                   ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30"
                   : "bg-rose-600 hover:bg-rose-500 text-white"
               }`}
             >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  clusterRunning ? "bg-emerald-400 animate-pulse" : "bg-rose-400"
-                }`}
-              />
-              {clusterRunning ? "Online" : "Offline"}
+              <span className={`w-2 h-2 rounded-full ${clusterRunning ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
+              {clusterBusy ? "Working..." : clusterRunning ? "Server Running" : "Server Stopped"}
             </button>
+            {clusterError && <p className="text-xs text-red-400 mt-1 max-w-xs">{clusterError}</p>}
           </div>
         </header>
 

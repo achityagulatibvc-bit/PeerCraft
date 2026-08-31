@@ -2,6 +2,7 @@ use std::io::Write;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::path::Path;
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,13 +14,15 @@ pub struct ProcessStatus {
 }
 
 pub struct ProcessSupervisor {
-    children: Arc<Mutex<std::collections::HashMap<String, Child>>>,
+    children: Arc<Mutex<HashMap<String, Child>>>,
+    active_role: Arc<Mutex<Option<String>>>,
 }
 
 impl ProcessSupervisor {
     pub fn new() -> Self {
         Self {
-            children: Arc::new(Mutex::new(std::collections::HashMap::new())),
+            children: Arc::new(Mutex::new(HashMap::new())),
+            active_role: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -33,7 +36,6 @@ impl ProcessSupervisor {
     ) -> Result<u32, String> {
         let mut map = self.children.lock().unwrap();
 
-        // Check if already running and active
         if let Some(child) = map.get_mut(dimension) {
             if let Ok(None) = child.try_wait() {
                 return Ok(child.id());
@@ -70,7 +72,7 @@ impl ProcessSupervisor {
         Err(format!("No running process with active stdin for dimension: {}", dimension))
     }
 
-    /// Checks if a dimension process is currently alive
+    /// Checks if a specific dimension's process is currently alive
     pub fn is_running(&self, dimension: &str) -> bool {
         let mut map = self.children.lock().unwrap();
         if let Some(child) = map.get_mut(dimension) {
@@ -83,11 +85,19 @@ impl ProcessSupervisor {
         }
     }
 
+    /// Returns true if ANY supervised process (any dimension) is still alive.
+    /// Also prunes any that already exited on their own (e.g. crashed), so a
+    /// dead process can't be misreported as running.
+    pub fn any_running(&self) -> bool {
+        let mut map = self.children.lock().unwrap();
+        map.retain(|_, child| matches!(child.try_wait(), Ok(None)));
+        !map.is_empty()
+    }
+
     /// Gracefully stops a dimension server process by sending stop / end command
     pub fn stop_dimension(&self, dimension: &str) -> Result<(), String> {
         let _ = self.send_command(dimension, if dimension == "velocity" { "end" } else { "stop" });
-        
-        // Wait briefly, then kill if still running
+
         let mut map = self.children.lock().unwrap();
         if let Some(mut child) = map.remove(dimension) {
             std::thread::spawn(move || {
@@ -98,12 +108,21 @@ impl ProcessSupervisor {
         Ok(())
     }
 
-    /// Gracefully terminates all active child processes
+    /// Gracefully terminates all active child processes across all dimensions
     pub fn terminate_all(&self) {
         let mut map = self.children.lock().unwrap();
         for (dim, mut child) in map.drain() {
             log::info!("Terminating {} process PID {}", dim, child.id());
             let _ = child.kill();
         }
+        *self.active_role.lock().unwrap() = None;
+    }
+
+    pub fn set_active_role(&self, role: Option<String>) {
+        *self.active_role.lock().unwrap() = role;
+    }
+
+    pub fn active_role(&self) -> Option<String> {
+        self.active_role.lock().unwrap().clone()
     }
 }

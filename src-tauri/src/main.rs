@@ -45,14 +45,18 @@ async fn run_benchmark() -> Result<BenchmarkMetrics, String> {
 }
 
 #[tauri::command]
-async fn get_cluster_status() -> Result<ClusterStatus, String> {
+async fn get_cluster_status(state: State<'_, AppState>) -> Result<ClusterStatus, String> {
+    let running = state.supervisor.any_running();
     Ok(ClusterStatus {
-        state: "RUNNING".into(),
-        active_role: "PRIMARY".into(),
+        state: if running { "RUNNING".into() } else { "STOPPED".into() },
+        active_role: state.supervisor.active_role().unwrap_or_else(|| "NONE".into()),
+        // TODO: still placeholder. No RCON implementation exists yet to query
+        // these from a live server, so we report 0 instead of inventing
+        // fake-but-plausible numbers.
         public_domain: "mc.peercraft.live".into(),
-        overworld_tps: 20.0,
-        nether_tps: 20.0,
-        total_players: 4,
+        overworld_tps: 0.0,
+        nether_tps: 0.0,
+        total_players: 0,
     })
 }
 
