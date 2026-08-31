@@ -6,7 +6,7 @@ proxies:
   bungee-cord:
     online-mode: false
   velocity:
-    enabled: true
+    enabled: false
     online-mode: false
     secret: "PEERCRAFT_SHARED_VELOCITY_SECRET_KEY_HEX"
 
