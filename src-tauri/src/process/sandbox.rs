@@ -17,7 +17,10 @@ pub struct SandboxManager;
 impl SandboxManager {
     /// Returns the root path for a given dimension instance ('overworld', 'nether_end', 'velocity')
     pub fn get_server_dir(dimension: &str) -> PathBuf {
-        let base_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        let base_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .to_path_buf();
         base_dir.join("servers").join(dimension)
     }
 
